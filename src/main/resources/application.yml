@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: hooks
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/hooks"
+    username: hooks
+    password: root
+  hikari:
+    connectionTimeout: 20000
+    maximumPoolSize: 5
+
+logentries:
+  token: ~
+
+management:
+  endpoints:
+    web:
+      base-path: ~

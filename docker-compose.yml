@@ -1,0 +1,66 @@
+version: '3.7'
+
+services:
+  database:
+    image: "postgres:11.2"
+    container_name: postgres
+    hostname: hooks
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=hooks
+      - POSTGRES_MULTIPLE_DATABASES=hooks,hooks_test
+    volumes:
+      - ./scripts/postgres-multiple-databases.sh:/docker-entrypoint-initdb.d/postgres-multiple-databases.sh
+      - postgres:/var/lib/hooks/data
+
+  hooks:
+    build:
+      context: .
+    image: repo/hooks
+    hostname: hooks
+    ports:
+      - "8080:8080"
+    init: true
+    depends_on:
+      - database
+      - data_platform
+      - localstack
+    environment:
+      - "DATABASE_URL=jdbc:postgresql://db:5432/hooks?user=hooks"
+
+  data_platform:
+    container_name: data_platform
+    image: "lensesio/fast-data-dev"
+    ports:
+      - "9092:9092"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
+      - "2181:2181"
+      - "3030:3030"
+      - "9001:9001"
+    environment:
+      - "SAMPLEDATA=0"
+      - "RUNNING_SAMPLEDATA=0"
+      - "RUNTESTS=0"
+      - "DISABLE_JMX=1"
+      - "SUPERVISORWEB=1"
+      - "ADV_HOST=127.0.0.1"
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - '4563-4599:4563-4599'
+      - '8055:8080'
+    environment:
+      - SERVICES=sns,sqs
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - './.localstack:/tmp/localstack'
+
+volumes:
+  postgres:
